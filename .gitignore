@@ -1,0 +1,74 @@
+# --- Dependencies ---
+node_modules/
+jspm_packages/
+.pnp
+.pnp.js
+
+# --- Keys ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.device
+*.pem
+*.key
+*.cert
+
+# --- REACT NATIVE & EXPO ---
+.expo/
+dist/
+web-build/
+cache/
+.watchmanconfig
+
+# --- ANDROID (React Native) ---
+android/app/build/
+android/.gradle/
+android/local.properties
+android/gen/
+android/out/
+*.keystore
+*.jks
+*.apk
+*.aab
+
+# --- IOS (React Native) ---
+ios/Pods/
+ios/build/
+*.xcworkspace
+*.xcuserdata
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+build/
+
+# --- FIREBASE ---
+.firebase/
+*.firebase.json
+firebase-debug.log
+
+# --- Logs & Temp files ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+pids/
+*.pid
+*.seed
+*.lock
+
+# --- POSTMAN ТА ТЕСТИ ---
+*.postman_environment
+.postman_cache
+coverage/
+.nyc_output
+
+# --- System files ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
