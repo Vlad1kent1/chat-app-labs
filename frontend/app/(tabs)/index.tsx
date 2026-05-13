@@ -65,6 +65,14 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <Link href="/modal">
+          <Link.Trigger>
+            <ThemedText type="subtitle">Open Chat List</ThemedText>
+          </Link.Trigger>
+        </Link>
+        <ThemedText>Browse active conversations and view message history.</ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
         <ThemedText>
           {`When you're ready, run `}

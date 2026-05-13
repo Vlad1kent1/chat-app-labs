@@ -1,13 +1,76 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  phone        String   @unique 
+  password     String
+  
+  firstName    String
+  lastName     String?
+  
+  username     String   @unique 
+  avatarUrl    String?
+  
+  fcmToken     String?  
+  
+  memberships  ChatMember[]
+  messages     Message[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  isOnline     Boolean  @default(false)
+  lastSeen     DateTime @default(now())
+}
+
+model Chat {
+  id           Int      @id @default(autoincrement())
+  title        String?  
+  chatImageUrl String?
+  isGroup      Boolean  @default(false) 
+  
+  members      ChatMember[]
+  messages     Message[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ChatMember {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  chatId    Int
+  
+  role      String   @default("MEMBER") 
+
+  user      User     @relation(fields: [userId], references: [id])
+  chat      Chat     @relation(fields: [chatId], references: [id])
+
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, chatId]) 
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String   
+  
+  type      String   @default("TEXT") 
+  
+  chatId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  isRead    Boolean  @default(false)
 }
