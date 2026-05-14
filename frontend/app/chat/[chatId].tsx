@@ -1,3 +1,3 @@
-import MessageScreen from '@/src/screens/MessageScreen';
+import MessageScreen from '@screens/chat/MessageScreen';
 
 export default MessageScreen;

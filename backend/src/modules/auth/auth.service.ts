@@ -12,27 +12,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserDto } from '../users/dto/user.dto';
+import { User } from '@prisma/client';
 
-/**
- * AuthService
- * 
- * This service handles authentication operations:
- * - User registration with username auto-generation
- * - User login with email or phone
- * - Password hashing and verification
- * - JWT token generation
- * 
- * Key Features:
- * - Auto-generates unique username from email (adds @ prefix)
- * - Supports login via email OR phone
- * - Uses bcrypt for secure password hashing
- * - JWT token generation for subsequent requests
- * 
- * Security Considerations:
- * - Passwords are hashed with bcrypt (10 salt rounds)
- * - Password is never exposed in responses
- * - JWT tokens are signed with a secret key
- */
+// AuthService
 @Injectable()
 export class AuthService {
   constructor(
@@ -41,33 +23,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  /**
-   * Registers a new user with auto-generated username.
-   * 
-   * Username Generation:
-   * - Extracts the part before @ in email
-   * - Adds @ prefix to create username (e.g., john.doe@example.com -> @john.doe)
-   * - If username already exists, appends a random suffix
-   * 
-   * Password Handling:
-   * - Hashed with bcrypt (10 salt rounds)
-   * - Original password is never stored
-   * 
-   * @param dto - RegisterDto containing email, password, firstName, lastName, phone
-   * @returns Promise resolving to AuthResponseDto with user data and JWT token
-   * @throws ConflictException if email already exists
-   * @throws BadRequestException if username generation fails
-   * 
-   * Example:
-   * const response = await authService.register({
-   *   email: 'john@example.com',
-   *   password: 'Password123!',
-   *   firstName: 'John',
-   *   lastName: 'Doe',
-   *   phone: '+380123456789'
-   * });
-   * // Returns: { user: {...}, accessToken: 'eyJ0eXA...' }
-   */
+  // Registers a new user with auto-generated username.
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     // Check if email already exists
     const existingUser = await this.usersService.findByEmail(dto.email);
@@ -114,65 +70,47 @@ export class AuthService {
     };
   }
 
-  /**
-   * Authenticates a user and returns JWT token.
-   * 
-   * Supports two login methods:
-   * 1. Email + Password
-   * 2. Phone + Password
-   * 
-   * At least one identifier (email or phone) must be provided.
-   * 
-   * @param dto - LoginDto with email OR phone and password
-   * @returns Promise resolving to AuthResponseDto with user data and token
-   * @throws BadRequestException if neither email nor phone provided
-   * @throws UnauthorizedException if user not found or password invalid
-   * 
-   * Example:
-   * // Login with email
-   * const response = await authService.login({
-   *   email: 'john@example.com',
-   *   password: 'Password123!'
-   * });
-   * 
-   * // Or login with phone
-   * const response = await authService.login({
-   *   phone: '+380123456789',
-   *   password: 'Password123!'
-   * });
-   */
+  // Authenticates a user and returns JWT token.
   async login(dto: LoginDto): Promise<AuthResponseDto> {
-    // Validate that at least one identifier is provided
+    // 1. Check for the presence of identifiers (email or phone)
     if (!dto.email && !dto.phone) {
       throw new BadRequestException('Email or phone must be provided');
     }
 
-    // Find user by email or phone
-    let user = null;
+    // 2. Search for the user with clear typing
+    // We use the type User | null so that TypeScript knows the user might not be found
+    let user: User | null = null;
+
     if (dto.email) {
       user = await this.prisma.user.findUnique({
         where: { email: dto.email },
       });
     } else if (dto.phone) {
+      // If the phone field is marked as @unique in the schema
       user = await this.prisma.user.findUnique({
         where: { phone: dto.phone },
       });
     }
 
+    // 3. Type Guard: check if the user exists
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
+    // 4. Password verification (now TS knows that user.password exists)
     const passwordValid = await bcrypt.compare(dto.password, user.password);
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Map to UserDto (excludes password)
+    // 5. Get the safe user object (without password)
+    // Since findById returns a UserDto, this matches the AuthResponseDto contract
     const userDto = await this.usersService.findById(user.id);
+    if (!userDto) {
+        throw new UnauthorizedException('User profile sync error');
+    }
 
-    // Generate JWT token
+    // 6. Generate token
     const accessToken = this.generateToken(user.id, user.email);
 
     return {
@@ -181,15 +119,7 @@ export class AuthService {
     };
   }
 
-  /**
-   * Verifies a JWT token and returns the decoded payload.
-   * 
-   * Used by JWT authentication guard to validate request tokens.
-   * 
-   * @param token - JWT token string (without 'Bearer' prefix)
-   * @returns Promise resolving to decoded token payload
-   * @throws UnauthorizedException if token is invalid or expired
-   */
+  // Verifies a JWT token and returns the decoded payload.
   async verifyToken(token: string): Promise<any> {
     try {
       const decoded = this.jwtService.verify(token);
@@ -199,21 +129,7 @@ export class AuthService {
     }
   }
 
-  /**
-   * Generates a JWT token for the given user.
-   * 
-   * Token Payload:
-   * - sub: User ID (for subject claim)
-   * - email: User's email
-   * - iat: Issued at timestamp
-   * - exp: Expiration (set to 7 days)
-   * 
-   * @param userId - The user's ID
-   * @param email - The user's email
-   * @returns Signed JWT token string
-   * 
-   * @private
-   */
+  // Generates a JWT token for the given user.
   private generateToken(userId: number, email: string): string {
     const payload = { sub: userId, email };
     return this.jwtService.sign(payload, {
@@ -221,39 +137,12 @@ export class AuthService {
     });
   }
 
-  /**
-   * Generates a username from email address.
-   * 
-   * Process:
-   * 1. Extract part before @ symbol
-   * 2. Add @ prefix
-   * 
-   * Examples:
-   * - john.doe@example.com -> @john.doe
-   * - user+test@domain.org -> @user+test
-   * 
-   * @param email - User's email address
-   * @returns Generated username starting with @
-   * @private
-   */
+  // Generates a username from email address.
   private generateUsernameFromEmail(email: string): string {
     const emailPart = email.split('@')[0];
     return `@${emailPart}`;
   }
 
-  /**
-   * Ensures the generated username is unique.
-   * If username already exists, appends a random suffix.
-   * 
-   * Example:
-   * - If @john_doe exists, tries @john_doe1, @john_doe2, etc.
-   * - Maximum 10 attempts before throwing error
-   * 
-   * @param baseUsername - The base username to check
-   * @returns Unique username guaranteed to not exist in database
-   * @throws BadRequestException if cannot generate unique username after 10 attempts
-   * @private
-   */
   private async ensureUniqueUsername(baseUsername: string): Promise<string> {
     // Check if base username is available
     let existingUser = await this.usersService.findByUsername(baseUsername);

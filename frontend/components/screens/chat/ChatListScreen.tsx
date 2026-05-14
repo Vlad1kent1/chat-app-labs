@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { getChats } from '@/src/services/chatService';
-import { Chat } from '@/src/types/Chat';
-import { ErrorMessage } from '@/src/components/ErrorMessage';
+import { getChats } from '@services/modules/chat.service';
+import type { Chat } from '@types';
+import { ErrorMessage } from '@common/ErrorMessage';
 
 const formatTimestamp = (value: string): string => {
   const date = new Date(value);

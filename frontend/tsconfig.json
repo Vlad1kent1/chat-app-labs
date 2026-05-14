@@ -6,6 +6,39 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@ui/*": [
+        "./components/ui/*"
+      ],
+      "@common/*": [
+        "./components/common/*"
+      ],
+      "@screens/*": [
+        "./components/screens/*"
+      ],
+      "@services/*": [
+        "./services/*"
+      ],
+      "@store/*": [
+        "./store/*"
+      ],
+      "@store": [
+        "./store/index.ts"
+      ],
+      "@hooks/*": [
+        "./hooks/*"
+      ],
+      "@constants/*": [
+        "./constants/*"
+      ],
+      "@types/*": [
+        "./types/*"
+      ],
+      "@types": [
+        "./types/index.ts"
+      ],
+      "tailwind.config": [
+        "./tailwind.config.js"
       ]
     }
   },
@@ -13,6 +46,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

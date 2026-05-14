@@ -8,11 +8,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
-import { getMessages } from '@/src/services/chatService';
-import { Message } from '@/src/types/Message';
-import { ErrorMessage } from '@/src/components/ErrorMessage';
+import { getMessages } from '@services/modules/message.service';
+import type { Message } from '@types';
+import { ErrorMessage } from '@common/ErrorMessage';
 
 const CURRENT_USER_ID = '1';
 
@@ -25,7 +25,7 @@ const formatTimestamp = (value: string): string => {
 };
 
 export default function MessageScreen() {
-  const { chatId } = useSearchParams();
+  const { chatId } = useLocalSearchParams<{ chatId?: string }>();
   const resolvedChatId = Array.isArray(chatId) ? chatId[0] : chatId;
 
   const [messages, setMessages] = useState<Message[]>([]);

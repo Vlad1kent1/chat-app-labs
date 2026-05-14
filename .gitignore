@@ -18,6 +18,7 @@ backend/prisma/generated/
 
 # --- Expo & React Native ---
 frontend/.expo/
+frontend/expo-env.d.ts
 frontend/dist/
 frontend/web-build/
 frontend/cache/
