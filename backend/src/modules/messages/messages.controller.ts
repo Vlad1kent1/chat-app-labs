@@ -8,10 +8,15 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageDto } from './dto/message.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { GetUser } from '../../common/decorators/get-user.decorator';
+import { type User } from '@prisma/client/edge';
+import { Patch, Delete } from '@nestjs/common';
 
 /**
  * MessagesController
@@ -65,6 +70,7 @@ export class MessagesController {
    * }
    */
   @Get('chats/:id/messages')
+  @UseGuards(JwtAuthGuard)
   async getMessagesByChat(
     @Param('id', ParseIntPipe) chatId: number,
     @Query('page') page?: number,
@@ -76,46 +82,35 @@ export class MessagesController {
   /**
    * POST /messages
    * 
-   * Creates a new message in the specified chat.
-   * The authorId should be extracted from the authenticated user's JWT token.
-   * 
-   * Body Parameters (CreateMessageDto):
-   * @param content - The message text content
-   * @param chatId - The ID of the chat to post to
-   * @param authorId - The ID of the user creating the message
-   * @param type - Optional message type (TEXT or IMAGE), defaults to TEXT
-   * 
-   * Returns: The created MessageDto with generated id and timestamp
-   * HTTP Status: 201 Created
-   * 
-   * Example Request:
-   * POST /messages
-   * Content-Type: application/json
-   * 
-   * {
-   *   "content": "Hello, everyone!",
-   *   "chatId": 5,
-   *   "authorId": 3,
-   *   "type": "TEXT"
-   * }
-   * 
-   * Example Response (wrapped by interceptor):
-   * {
-   *   "success": true,
-   *   "data": {
-   *     "id": 43,
-   *     "content": "Hello, everyone!",
-   *     "type": "TEXT",
-   *     "chatId": 5,
-   *     "authorId": 3,
-   *     "createdAt": "2026-05-13T10:35:00Z",
-   *     "isRead": false
-   *   }
-   * }
+   * Creates a new message in the specified chat or creates a direct chat lazily.
    */
   @Post('messages')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  async createMessage(@Body() dto: CreateMessageDto): Promise<MessageDto> {
-    return this.messagesService.create(dto);
+  async createMessage(
+    @Body() dto: CreateMessageDto,
+    @GetUser() user: User,
+  ): Promise<MessageDto> {
+    return this.messagesService.create({
+      ...dto,
+      authorId: user.id,
+    });
+  }
+
+  @Patch('messages/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateMessage(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('content') content: string,
+    @GetUser() user: User,
+  ): Promise<MessageDto> {
+    return this.messagesService.update(id, content, user.id);
+  }
+
+  @Delete('messages/:id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMessage(@Param('id', ParseIntPipe) id: number, @GetUser() user: User): Promise<void> {
+    return this.messagesService.delete(id, user.id);
   }
 }

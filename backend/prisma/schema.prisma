@@ -9,16 +9,17 @@ datasource db {
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
-  phone        String   @unique 
+  phone        String?  @unique
   password     String
   
   firstName    String
   lastName     String?
   
-  username     String   @unique 
+  username     String   @unique
   avatarUrl    String?
   
-  fcmToken     String?  
+  isVerified   Boolean  @default(false)
+  fcmToken     String?
   
   memberships  ChatMember[]
   messages     Message[]
@@ -32,9 +33,9 @@ model User {
 
 model Chat {
   id           Int      @id @default(autoincrement())
-  title        String?  
+  title        String?
   chatImageUrl String?
-  isGroup      Boolean  @default(false) 
+  type         ChatType @default(DIRECT)
   
   members      ChatMember[]
   messages     Message[]
@@ -48,21 +49,21 @@ model ChatMember {
   userId    Int
   chatId    Int
   
-  role      String   @default("MEMBER") 
+  role      String   @default("MEMBER")
 
   user      User     @relation(fields: [userId], references: [id])
   chat      Chat     @relation(fields: [chatId], references: [id])
 
   joinedAt  DateTime @default(now())
 
-  @@unique([userId, chatId]) 
+  @@unique([userId, chatId])
 }
 
 model Message {
   id        Int      @id @default(autoincrement())
-  content   String   
+  content   String
   
-  type      String   @default("TEXT") 
+  type      String   @default("TEXT")
   
   chatId    Int
   chat      Chat     @relation(fields: [chatId], references: [id])
@@ -73,4 +74,25 @@ model Message {
   createdAt DateTime @default(now())
   
   isRead    Boolean  @default(false)
+}
+
+model VerificationCode {
+  id        Int              @id @default(autoincrement())
+  email     String
+  code      String
+  type      VerificationType
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, type])
+}
+
+enum VerificationType {
+  REGISTER
+  RESET
+}
+
+enum ChatType {
+  DIRECT
+  GROUP
 }

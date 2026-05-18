@@ -9,11 +9,18 @@ interface ApiResponse<T> {
 }
 
 const mapUser = (raw: any): User => ({
-  id: String(raw.id),
+  id: Number(raw.id),
   email: String(raw.email),
-  name: String(raw.name),
-  avatarUrl: raw.avatarUrl ?? undefined,
+  phone: raw.phone ?? null,
+  firstName: String(raw.firstName),
+  lastName: raw.lastName ?? null,
+  username: String(raw.username),
+  avatarUrl: raw.avatarUrl ?? null,
+  fcmToken: raw.fcmToken ?? null,
+  isOnline: Boolean(raw.isOnline),
+  lastSeen: String(raw.lastSeen),
   createdAt: String(raw.createdAt),
+  updatedAt: String(raw.updatedAt),
 });
 
 const mapMessage = (raw: any): Message => ({
@@ -47,6 +54,41 @@ export async function getMessages(chatId: string): Promise<Message[]> {
     }
 
     return payload.map(mapMessage);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+}
+
+export async function sendMessage(
+  content: string,
+  chatId?: string,
+  recipientId?: number,
+): Promise<Message> {
+  try {
+    const response = await axiosInstance.post<ApiResponse<any>>('/messages', {
+      content,
+      chatId: chatId ? Number(chatId) : undefined,
+      recipientId,
+    });
+
+    return mapMessage(response.data.data);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+}
+
+export async function updateMessage(messageId: string, content: string): Promise<Message> {
+  try {
+    const response = await axiosInstance.patch<ApiResponse<any>>(`/messages/${messageId}`, { content });
+    return mapMessage(response.data.data);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+}
+
+export async function deleteMessage(messageId: string): Promise<void> {
+  try {
+    await axiosInstance.delete(`/messages/${messageId}`);
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }

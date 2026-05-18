@@ -1,7 +1,14 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  name: string;
-  avatarUrl?: string;
+  phone?: string | null;
+  firstName: string;
+  lastName?: string | null;
+  username: string;
+  avatarUrl?: string | null;
+  fcmToken?: string | null;
+  isOnline: boolean;
+  lastSeen: string;
   createdAt: string;
+  updatedAt: string;
 }

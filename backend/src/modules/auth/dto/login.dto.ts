@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 /**
  * DTO for user login.
@@ -14,12 +14,14 @@ export class LoginDto {
   /**
    * User's email address (optional if phone is provided)
    */
+  @IsOptional()
   @IsString()
   email?: string;
 
   /**
    * User's phone number (optional if email is provided)
    */
+  @IsOptional()
   @IsString()
   phone?: string;
 
@@ -29,5 +31,5 @@ export class LoginDto {
    */
   @IsNotEmpty()
   @IsString()
-  password: string;
+  password!: string;
 }

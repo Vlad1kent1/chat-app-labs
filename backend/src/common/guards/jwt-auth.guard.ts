@@ -6,8 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Observable } from 'rxjs';
-
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -17,6 +15,11 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
+
+    if (request.method === 'OPTIONS') {
+      this.logger.log('OPTIONS preflight request bypassed by JwtAuthGuard');
+      return true;
+    }
 
     const authHeader = request.headers.authorization;
     if (!authHeader) {

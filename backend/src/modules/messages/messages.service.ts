@@ -1,115 +1,175 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageDto } from './dto/message.dto';
+import { ChatsGateway } from '../chats/chats.gateway';
 
-/**
- * MessagesService
- * 
- * This service handles all message-related database operations for the Chat Application.
- * It follows the Single Responsibility Principle by isolating message business logic.
- * 
- * Key Methods:
- * - findAllByChat: Retrieves paginated messages for a specific chat
- * - create: Saves a new message to the database
- * 
- * All operations are asynchronous and use Prisma for database access.
- */
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private readonly chatsGateway: ChatsGateway) {}
 
-  /**
-   * Retrieves all messages for a specific chat with pagination.
-   * 
-   * Queries the Message table filtered by chatId, orders by creation date (newest first),
-   * and applies pagination using skip/take parameters.
-   * 
-   * @param chatId - The ID of the chat to fetch messages for
-   * @param page - The page number (1-indexed), defaults to 1
-   * @param pageSize - Number of messages per page, defaults to 20
-   * @returns Promise resolving to an array of MessageDto objects
-   * 
-   * Example: 
-   * const messages = await messagesService.findAllByChat(5, 1, 20);
-   * Returns the first 20 most recent messages from chat with ID 5.
-   */
   async findAllByChat(
     chatId: number,
     page: number = 1,
     pageSize: number = 20,
   ): Promise<MessageDto[]> {
-    // Validate pagination parameters
     const skip = Math.max(0, (page - 1) * pageSize);
     const take = Math.max(1, pageSize);
 
-    // Query messages ordered by newest first
     const messages = await this.prisma.message.findMany({
       where: { chatId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'asc' },
       skip,
       take,
+      include: {
+        author: true,
+      },
     });
 
     return messages as MessageDto[];
   }
 
-  /**
-   * Creates a new message in the database.
-   * 
-   * Inserts a new Message record with the provided data.
-   * The message is immediately available for retrieval after creation.
-   * 
-   * @param dto - CreateMessageDto containing message content, chatId, and authorId
-   * @returns Promise resolving to the created MessageDto with generated id and timestamps
-   * 
-   * Example:
-   * const newMessage = await messagesService.create({
-   *   content: 'Hello!',
-   *   chatId: 5,
-   *   authorId: 3,
-   *   type: 'TEXT'
-   * });
-   */
   async create(dto: CreateMessageDto): Promise<MessageDto> {
+    const authorId = dto.authorId;
+    if (!authorId) {
+      throw new BadRequestException('Author ID is required to create a message.');
+    }
+
+    let chatId = dto.chatId;
+    let createdChat: any | null = null;
+    let chatMemberIds: number[] = [];
+
+    if (!chatId) {
+      if (!dto.recipientId) {
+        throw new BadRequestException('Either chatId or recipientId must be provided.');
+      }
+
+      const authorIdNumber = Number(authorId);
+      const recipientIdNumber = Number(dto.recipientId);
+
+      // Зверни увагу: у твоїй новій міграції таблиця називається `participants` або `members`? 
+      // Залишаю як у тебе (members), але перевір відповідність новій схемі!
+      const existingChat = await this.prisma.chat.findFirst({
+        where: {
+          type: 'DIRECT',
+          AND: [
+            { members: { some: { userId: authorIdNumber } } },
+            { members: { some: { userId: recipientIdNumber } } },
+          ],
+        },
+        include: { members: true },
+      });
+
+      if (existingChat) {
+        chatId = existingChat.id;
+      } else {
+        createdChat = await this.prisma.chat.create({
+          data: {
+            type: 'DIRECT',
+            members: {
+              create: [
+                { userId: authorIdNumber, role: 'MEMBER' },
+                { userId: recipientIdNumber, role: 'MEMBER' },
+              ],
+            },
+          },
+        });
+        chatId = createdChat.id;
+        chatMemberIds = [authorIdNumber, recipientIdNumber];
+      }
+    }
+
+    // 🌟 ФІКС ПОМИЛКИ: Гарантуємо TypeScript, що chatId існує і є числом
+    if (!chatId) {
+      throw new BadRequestException('Chat could not be found or created.');
+    }
+
+    // Тепер TypeScript знає, що тут chatId — це суворо number
     const message = await this.prisma.message.create({
       data: {
         content: dto.content,
         type: dto.type || 'TEXT',
-        chatId: dto.chatId,
-        authorId: dto.authorId,
+        chatId, // 🔥 Більше не свариться!
+        authorId,
+      },
+      include: {
+        author: true,
       },
     });
+
+    const memberRecords = await this.prisma.chatMember.findMany({
+      where: { chatId },
+      select: { userId: true },
+    });
+
+    const recipients = memberRecords
+      .map((member) => member.userId)
+      .filter((userId) => userId !== authorId);
+
+    if (createdChat) {
+      this.chatsGateway.sendChatCreated(createdChat, chatMemberIds);
+    }
+
+    this.chatsGateway.sendMessageCreated(message, recipients);
 
     return message as MessageDto;
   }
 
-  /**
-   * Retrieves a single message by its ID.
-   * Used for validating message existence before read operations.
-   * 
-   * @param messageId - The ID of the message to retrieve
-   * @returns Promise resolving to MessageDto or null if not found
-   */
   async findById(messageId: number): Promise<MessageDto | null> {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
+      include: { author: true },
     });
 
     return message as MessageDto | null;
   }
 
-  /**
-   * Marks a message as read.
-   * Called when a user views a message.
-   * 
-   * @param messageId - The ID of the message to mark as read
-   * @returns Promise resolving to the updated MessageDto
-   */
+  async update(messageId: number, newContent: string, requesterId: number): Promise<MessageDto> {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.authorId !== requesterId) {
+      throw new ForbiddenException('Only the message author can edit this message');
+    }
+
+    const updated = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { content: newContent },
+      include: { author: true },
+    });
+
+    // notify chat members
+    const members = await this.prisma.chatMember.findMany({ where: { chatId: updated.chatId }, select: { userId: true } });
+    const recipientIds = members.map((m) => m.userId).filter((id) => id !== requesterId);
+    this.chatsGateway.sendMessageEdited(updated, recipientIds);
+
+    return updated as MessageDto;
+  }
+
+  async delete(messageId: number, requesterId: number): Promise<void> {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.authorId !== requesterId) {
+      throw new ForbiddenException('Only the message author can delete this message');
+    }
+
+    await this.prisma.message.delete({ where: { id: messageId } });
+
+    const members = await this.prisma.chatMember.findMany({ where: { chatId: message.chatId }, select: { userId: true } });
+    const recipientIds = members.map((m) => m.userId).filter((id) => id !== requesterId);
+    this.chatsGateway.sendMessageDeleted(messageId, message.chatId, recipientIds);
+  }
+
   async markAsRead(messageId: number): Promise<MessageDto> {
     const message = await this.prisma.message.update({
       where: { id: messageId },
       data: { isRead: true },
+      include: { author: true },
     });
 
     return message as MessageDto;

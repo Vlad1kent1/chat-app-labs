@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUrl, IsArray, ArrayNotEmpty, ArrayUnique, IsInt } from 'class-validator';
 
 /**
  * DTO for creating a new chat.
@@ -15,6 +15,13 @@ export class CreateChatDto {
   title?: string;
 
   /**
+   * Alternate title field for compatibility.
+   */
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  /**
    * URL to chat group image/avatar (optional)
    */
   @IsOptional()
@@ -22,11 +29,32 @@ export class CreateChatDto {
   chatImageUrl?: string;
 
   /**
-   * Flag indicating if this is a group chat
-   * If false, it's a direct message (DM) between two users
-   * Defaults to false
+   * Flag indicating if this is a group chat.
+   * If false, it will be created as a direct chat.
+   * Defaults to false.
    */
   @IsOptional()
   @IsBoolean()
   isGroup?: boolean;
+
+  /**
+   * Member IDs to add to a group chat.
+   * The creator is always added automatically.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  memberIds?: number[];
+
+  /**
+   * Alternate member ID array field for compatibility.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  userIds?: number[];
 }

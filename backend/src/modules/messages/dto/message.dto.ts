@@ -1,3 +1,5 @@
+import { UserDto } from '../../users/dto/user.dto';
+
 /**
  * DTO for returning message data to the client.
  * Used in API responses from GET and POST message endpoints.
@@ -5,23 +7,26 @@
  */
 export class MessageDto {
   /** Unique message identifier */
-  id: number;
+  id!: number;
 
   /** The message content/text */
-  content: string;
+  content!: string;
 
   /** Message type (TEXT or IMAGE) */
-  type: string;
+  type!: string;
 
   /** The ID of the chat this message belongs to */
-  chatId: number;
+  chatId!: number;
 
   /** The ID of the user who authored this message */
-  authorId: number;
+  authorId!: number;
+
+  /** Author details */
+  author!: UserDto;
 
   /** Timestamp when the message was created */
-  createdAt: Date;
+  createdAt!: Date;
 
   /** Flag indicating if the message has been read by recipients */
-  isRead: boolean;
+  isRead!: boolean;
 }

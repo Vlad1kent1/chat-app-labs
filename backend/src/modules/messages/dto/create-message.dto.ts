@@ -3,7 +3,7 @@ import { IsString, IsInt, IsOptional, IsEnum } from 'class-validator';
 /**
  * DTO for creating a new message.
  * Used in the POST /messages endpoint.
- * Validates that the message has content, is associated with a chat and author.
+ * Validates that the message has content and is associated with a chat or recipient.
  */
 export class CreateMessageDto {
   /**
@@ -11,22 +11,30 @@ export class CreateMessageDto {
    * Must be a non-empty string
    */
   @IsString()
-  content: string;
+  content!: string;
 
   /**
-   * The ID of the chat where this message is being sent
-   * Must be a positive integer
+   * The ID of the chat where this message is being sent.
+   * If omitted, recipientId must be provided to create a direct chat lazily.
    */
+  @IsOptional()
   @IsInt()
-  chatId: number;
+  chatId?: number;
 
   /**
-   * The ID of the user creating/authoring the message
-   * Must be a positive integer
-   * Typically extracted from JWT token via @GetUser() decorator
+   * The ID of the recipient user when creating a new direct chat lazily.
    */
+  @IsOptional()
   @IsInt()
-  authorId: number;
+  recipientId?: number;
+
+  /**
+   * The ID of the user creating/authoring the message.
+   * This value is populated on the server side from the authenticated token.
+   */
+  @IsOptional()
+  @IsInt()
+  authorId?: number;
 
   /**
    * The message type (TEXT or IMAGE)

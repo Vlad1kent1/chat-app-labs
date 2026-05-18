@@ -1,25 +1,18 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common'; // 👈 1. Обов'язково додаємо forwardRef сюди
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { ChatsGateway } from './chats.gateway';
 
-/**
- * ChatsModule
- * 
- * Encapsulates all chat-related functionality following the Nest.js modular pattern.
- * This module is responsible for:
- * - Creating and managing chats (group and direct messages)
- * - Serving API endpoints for chat operations
- * - Managing chat members
- * 
- * Imports: PrismaModule to access database layer
- * Controllers: ChatsController for HTTP routes
- * Providers: ChatsService for business logic
- */
+// ChatsModule
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule, 
+    forwardRef(() => AuthModule) 
+  ],
   controllers: [ChatsController],
-  providers: [ChatsService],
-  exports: [ChatsService],
+  providers: [ChatsService, ChatsGateway],
+  exports: [ChatsService, ChatsGateway],
 })
 export class ChatsModule {}

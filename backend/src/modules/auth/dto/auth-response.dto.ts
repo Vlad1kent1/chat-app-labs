@@ -10,11 +10,11 @@ export class AuthResponseDto {
   /**
    * The authenticated user's information
    */
-  user: UserDto;
+  user!: UserDto;
 
   /**
    * JWT access token for subsequent authenticated requests
    * Include in Authorization header: Bearer <accessToken>
    */
-  accessToken: string;
+  accessToken!: string;
 }

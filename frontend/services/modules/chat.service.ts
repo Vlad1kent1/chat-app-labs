@@ -9,11 +9,18 @@ interface ApiResponse<T> {
 }
 
 const mapUser = (raw: any): User => ({
-  id: String(raw.id),
+  id: Number(raw.id),
   email: String(raw.email),
-  name: String(raw.name),
-  avatarUrl: raw.avatarUrl ?? undefined,
+  phone: raw.phone ?? null,
+  firstName: String(raw.firstName),
+  lastName: raw.lastName ?? null,
+  username: String(raw.username),
+  avatarUrl: raw.avatarUrl ?? null,
+  fcmToken: raw.fcmToken ?? null,
+  isOnline: Boolean(raw.isOnline),
+  lastSeen: String(raw.lastSeen),
   createdAt: String(raw.createdAt),
+  updatedAt: String(raw.updatedAt),
 });
 
 const mapMessage = (raw: any): Message => ({
@@ -24,29 +31,28 @@ const mapMessage = (raw: any): Message => ({
   author: mapUser(raw.author),
 });
 
-const mapChat = (raw: any): Chat => {
-  const lastMessageRaw = Array.isArray(raw.messages) ? raw.messages[raw.messages.length - 1] : undefined;
+const mapChat = (raw: any): Chat => ({
+  id: String(raw.id),
+  title: raw.title ? String(raw.title) : undefined,
+  isGroup: raw.type === 'GROUP',
+  updatedAt: String(raw.updatedAt),
+  lastMessage: raw.lastMessage ? mapMessage(raw.lastMessage) : undefined,
+  members: Array.isArray(raw.members)
+    ? raw.members.map((m: any) => mapUser(m.user ?? m))
+    : undefined,
+});
 
-  return {
-    id: String(raw.id),
-    title: raw.title ? String(raw.title) : undefined,
-    isGroup: Boolean(raw.isGroup),
-    updatedAt: String(raw.updatedAt),
-    lastMessage: lastMessageRaw ? mapMessage(lastMessageRaw) : undefined,
-  };
-};
-
-const extractErrorMessage = (error: unknown): string => {
+const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof AxiosError) {
     const responseData = error.response?.data as { message?: string } | undefined;
-    return responseData?.message ?? error.message ?? 'Unable to load data from server';
+    return responseData?.message ?? error.message ?? fallback;
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return 'An unknown error occurred while fetching data';
+  return fallback;
 };
 
 export async function getChats(): Promise<Chat[]> {
@@ -60,21 +66,77 @@ export async function getChats(): Promise<Chat[]> {
 
     return payload.map(mapChat);
   } catch (error) {
-    throw new Error(extractErrorMessage(error));
+    throw new Error(extractErrorMessage(error, 'Unable to load chats'));
   }
 }
 
-export async function getMessages(chatId: string): Promise<Message[]> {
+export async function searchChatEntities(query: string): Promise<{ users: User[]; chats: Chat[] }> {
   try {
-    const response = await axiosInstance.get<ApiResponse<any[]>>(`/chats/${chatId}/messages`);
+    const response = await axiosInstance.get<ApiResponse<{ users: any[]; chats: any[] }>>(
+      `/chats/search?query=${encodeURIComponent(query)}`,
+    );
     const payload = response.data.data;
 
-    if (!Array.isArray(payload)) {
-      throw new Error('Unexpected server response for messages');
-    }
-
-    return payload.map(mapMessage);
+    return {
+      users: Array.isArray(payload.users) ? payload.users.map(mapUser) : [],
+      chats: Array.isArray(payload.chats) ? payload.chats.map(mapChat) : [],
+    };
   } catch (error) {
-    throw new Error(extractErrorMessage(error));
+    throw new Error(extractErrorMessage(error, 'Unable to perform search'));
+  }
+}
+
+export async function createGroupChat(title: string, memberIds: number[]): Promise<Chat> {
+  try {
+    const response = await axiosInstance.post<ApiResponse<any>>('/chats/group', {
+      title,
+      isGroup: true,
+      memberIds,
+    });
+
+    const payload = response.data.data;
+    return mapChat(payload);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, 'Unable to create group chat'));
+  }
+}
+
+export async function addParticipants(chatId: number, userIds: number[]): Promise<Chat> {
+  try {
+    await axiosInstance.post(`/chats/${chatId}/participants`, { userIds });
+    const response = await axiosInstance.get<ApiResponse<any>>(`/chats/${chatId}`);
+    return mapChat(response.data.data);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, 'Unable to add participants'));
+  }
+}
+
+export async function updateChatTitle(chatId: number, title: string): Promise<Chat> {
+  try {
+    const response = await axiosInstance.patch<ApiResponse<any>>(`/chats/${chatId}`, { title });
+    return mapChat(response.data.data);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, 'Unable to update chat title'));
+  }
+}
+
+export async function getChat(chatId: string): Promise<Chat> {
+  try {
+    const response = await axiosInstance.get<ApiResponse<any>>(`/chats/${chatId}`);
+    return mapChat(response.data.data);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, 'Unable to load chat')); 
+  }
+}
+
+export async function checkDirectChat(recipientId: number): Promise<Chat | null> {
+  try {
+    const response = await axiosInstance.get<ApiResponse<any>>(`/chats/check-direct/${recipientId}`);
+    return mapChat(response.data.data);
+  } catch (error) {
+    if (error instanceof AxiosError && error.response?.status === 404) {
+      return null;
+    }
+    throw new Error(extractErrorMessage(error, 'Unable to check direct chat'));
   }
 }
