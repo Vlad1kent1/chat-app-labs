@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   AppState,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard'; // 👈 Наш рятівник
+import * as Clipboard from 'expo-clipboard'; 
 
 interface OTPInputMatrixProps {
   length: number;
@@ -21,12 +21,10 @@ export function OTPInputMatrix({ length, value, onChangeValue }: OTPInputMatrixP
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [clipboardContent, setClipboardContent] = useState<string>('');
 
-  // Функція для перевірки, що лежить в буфері обміну
   const checkClipboard = async () => {
     const hasString = await Clipboard.hasStringAsync();
     if (hasString) {
       const text = await Clipboard.getStringAsync();
-      // Якщо в буфері суто цифри і довжина підходить під наш OTP
       if (/^[0-9]+$/.test(text.trim()) && text.trim().length === length) {
         setClipboardContent(text.trim());
         return;
@@ -35,7 +33,6 @@ export function OTPInputMatrix({ length, value, onChangeValue }: OTPInputMatrixP
     setClipboardContent('');
   };
 
-  // Перевіряємо буфер при монтуванні та коли користувач повертається в додаток
   useEffect(() => {
     checkClipboard();
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -46,7 +43,6 @@ export function OTPInputMatrix({ length, value, onChangeValue }: OTPInputMatrixP
     return () => subscription.remove();
   }, []);
 
-  // Функція для ручної вставки в один клік
   const handleButtonPaste = () => {
     if (clipboardContent) {
       const pastedArray = clipboardContent.split('');
@@ -65,7 +61,6 @@ export function OTPInputMatrix({ length, value, onChangeValue }: OTPInputMatrixP
 
     if (!/^[0-9]+$/.test(text)) return;
 
-    // Якщо раптом спрацювала нативна вставка iOS Auto-fill
     if (text.length > 1) {
       const pastedCode = text.trim().slice(0, length).split('');
       const newValue = Array(length).fill('');
@@ -103,7 +98,6 @@ export function OTPInputMatrix({ length, value, onChangeValue }: OTPInputMatrixP
 
   return (
     <View style={styles.mainWrapper}>
-      {/* Матриця інпутів */}
       <View style={[styles.container, { gap: 8 }]}>
         {Array.from({ length }).map((_, index) => (
           <TextInput

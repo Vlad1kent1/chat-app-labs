@@ -5,41 +5,12 @@ import { ChatDto } from './dto/chat.dto';
 import { MessageDto } from '../messages/dto/message.dto';
 import { ChatsGateway } from './chats.gateway';
 
-/**
- * ChatsService
- * 
- * This service handles all chat-related database operations.
- * Manages chat creation, retrieval, and member management.
- * 
- * Key Methods:
- * - create: Creates a new chat
- * - findById: Retrieves a chat by ID
- * - findUserChats: Gets all chats for a specific user
- * - addMember: Adds a user to a chat
- * 
- * All operations are asynchronous and use Prisma for database access.
- * Follows the Single Responsibility Principle by isolating chat business logic.
- */
+// ChatsService
 @Injectable()
 export class ChatsService {
   constructor(private prisma: PrismaService, private readonly chatsGateway: ChatsGateway) {}
 
-  /**
-   * Creates a new chat.
-   * 
-   * Supports both direct messages and group chats.
-   * For group chats, title and chatImageUrl can be provided.
-   * 
-   * @param dto - CreateChatDto with optional title and image
-   * @param creatorId - The ID of the user creating the chat
-   * @returns Promise resolving to created ChatDto
-   * 
-   * Example:
-   * const chat = await chatsService.create({
-   *   title: 'Project Team',
-   *   isGroup: true
-   * }, 3);
-   */
+  // Creates a new chat.
   async create(dto: CreateChatDto, creatorId: number): Promise<ChatDto> {
     const isGroup = Boolean(dto.isGroup);
     const title = dto.title?.trim() || dto.name?.trim();
@@ -89,13 +60,7 @@ export class ChatsService {
     return this.create({ ...dto, isGroup: true }, creatorId);
   }
 
-  /**
-   * Retrieves a chat by its ID.
-   * 
-   * @param chatId - The ID of the chat to retrieve
-   * @returns Promise resolving to ChatDto
-   * @throws NotFoundException if chat doesn't exist
-   */
+  // Retrieves a chat by its ID.
   async findById(chatId: number): Promise<ChatDto> {
     const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
@@ -116,11 +81,7 @@ export class ChatsService {
     return this.mapToChatDto(chat);
   }
 
-  /**
-   * Retrieves all chats.
-   * 
-   * @returns Promise resolving to array of ChatDto
-   */
+  // Retrieves all chats.
   async findAll(): Promise<ChatDto[]> {
     const chats = await this.prisma.chat.findMany({
       include: {
@@ -135,13 +96,7 @@ export class ChatsService {
     return chats.map((chat) => this.mapToChatDto(chat));
   }
 
-  /**
-   * Retrieves all chats for a specific user.
-   * Returns chats where the user is a member.
-   * 
-   * @param userId - The user ID to fetch chats for
-   * @returns Promise resolving to array of ChatDto
-   */
+  // Retrieves all chats for a specific user.
   async findUserChats(userId: number): Promise<ChatDto[]> {
     const chats = await this.prisma.chat.findMany({
       where: {
@@ -237,15 +192,7 @@ export class ChatsService {
     };
   }
 
-  /**
-   * Adds a user to a chat as a member.
-   * 
-   * @param chatId - The chat ID to add member to
-   * @param userId - The user ID to add
-   * @param role - The role of the member (ADMIN or MEMBER), defaults to MEMBER
-   * @returns Promise resolving to void
-   * @throws NotFoundException if chat or user doesn't exist
-   */
+  // Adds a user to a chat as a member.
   async addMember(
     chatId: number,
     userId: number,
@@ -311,13 +258,7 @@ export class ChatsService {
     return this.mapToChatDto(updated);
   }
 
-  /**
-   * Removes a user from a chat.
-   * 
-   * @param chatId - The chat ID
-   * @param userId - The user ID to remove
-   * @returns Promise resolving to void
-   */
+  // Removes a user from a chat.
   async removeMember(chatId: number, userId: number): Promise<void> {
     await this.prisma.chatMember.deleteMany({
       where: {
@@ -327,20 +268,13 @@ export class ChatsService {
     });
   }
 
-  /**
-   * Maps Prisma Chat model to ChatDto.
-   * 
-   * @param chat - The Prisma Chat model
-   * @returns ChatDto for API responses
-   * @private
-   */
+  // Maps Prisma Chat model to ChatDto.
   private mapToChatDto(chat: any): ChatDto {
     return {
       id: chat.id,
       title: chat.title,
       chatImageUrl: chat.chatImageUrl,
       type: chat.type,
-      isGroup: chat.type === 'GROUP',
       lastMessage: chat.messages?.[0] ? (chat.messages[0] as MessageDto) : undefined,
       createdAt: chat.createdAt,
       updatedAt: chat.updatedAt,

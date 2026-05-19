@@ -18,7 +18,6 @@ import { getMessages, sendMessage, updateMessage, deleteMessage } from '@service
 import { getChat, checkDirectChat } from '@services/modules/chat.service';
 import { connectSocket, subscribeMessageCreated } from '@services/modules/socket.service';
 import type { Chat, Message } from '@types';
-import { ErrorMessage } from '@common/ErrorMessage';
 import { useAppSelector } from '@store/hooks';
 
 const formatTimestamp = (value: string): string => {
@@ -141,7 +140,7 @@ export default function MessageScreen() {
               createdAt: String(message.author.createdAt),
               updatedAt: String(message.author.updatedAt),
             },
-          }] );
+          }]);
         }
       });
     });
@@ -224,6 +223,11 @@ export default function MessageScreen() {
     setActionMessageId(null);
   };
 
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setDraft('');
+  };
+
   const renderMessage: ListRenderItem<Message> = ({ item }) => {
     const currentUser = isCurrentUser(item.author.id);
     return (
@@ -257,63 +261,88 @@ export default function MessageScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>{'<'}</Text>
-        </Pressable>
-        <Pressable style={styles.headerTitleContainer} onPress={() => router.push(`/chat/${resolvedChatId}/info`)}>
-          <Text style={styles.headerTitle}>{getConversationTitle()}</Text>
-        </Pressable>
-      </View>
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => `message-${item.id}`}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.listContent}
-        inverted={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
-              {directRecipientId ? 'Start a new conversation' : 'No messages yet'}
-            </Text>
-          </View>
-        }
-      />
-
-      {actionMessageId ? (
-        <View style={styles.actionOverlay}>
-          <View style={styles.actionBox}>
-            <Pressable style={styles.actionButton} onPress={() => handleEditMessage(actionMessageId)}>
-              <Text style={styles.actionText}>Edit Message</Text>
-            </Pressable>
-            <Pressable style={styles.actionButton} onPress={() => handleDeleteMessage(actionMessageId)}>
-              <Text style={styles.actionText}>Delete Message</Text>
-            </Pressable>
-            <Pressable style={styles.actionButton} onPress={() => setActionMessageId(null)}>
-              <Text style={styles.actionText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 64}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
       >
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Type a message…"
-            placeholderTextColor="#000000"
-            multiline
-          />
-          <Pressable style={styles.sendButton} onPress={handleSend} disabled={sending || !draft.trim()}>
-            <Text style={styles.sendButtonText}>{sending ? 'Sending' : 'Send'}</Text>
+        {/* Хедер */}
+        <View style={styles.headerBar}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backButtonText}>{'<'}</Text>
+          </Pressable>
+          <Pressable style={styles.headerTitleContainer} onPress={() => router.push(`/chat/${resolvedChatId}/info`)}>
+            <Text style={styles.headerTitle}>{getConversationTitle()}</Text>
           </Pressable>
         </View>
-        {error ? <Text style={styles.sendError}>{error}</Text> : null}
+
+        {/* Список повідомлень */}
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => `message-${item.id}`}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {directRecipientId ? 'Start a new conversation' : 'No messages yet'}
+              </Text>
+            </View>
+          }
+        />
+
+        {/* Плашка під час редагування повідомлення */}
+        {editingMessageId && (
+          <View style={styles.editInfoRow}>
+            <Text style={styles.editInfoText}>Editing message...</Text>
+            <Pressable onPress={handleCancelEdit} style={styles.cancelEditButton}>
+              <Text style={styles.cancelEditButtonText}>✕</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Поле введення та кнопка відправки */}
+        <View style={styles.inputAreaContainer}>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Type a message…"
+              placeholderTextColor="#666666"
+              multiline
+            />
+            <Pressable 
+              style={[styles.sendButton, (!draft.trim() || sending) && styles.sendButtonDisabled]} 
+              onPress={handleSend} 
+              disabled={sending || !draft.trim()}
+            >
+              <Text style={[styles.sendButtonText, (!draft.trim() || sending) && styles.sendButtonTextDisabled]}>
+                {sending ? '...' : 'SEND'}
+              </Text>
+            </Pressable>
+          </View>
+          {error ? <Text style={styles.sendError}>{error}</Text> : null}
+        </View>
+
+        {/* Модальне меню дій при довгому тапі */}
+        {actionMessageId ? (
+          <View style={styles.actionOverlay}>
+            <View style={styles.actionBox}>
+              <Pressable style={styles.actionButton} onPress={() => handleEditMessage(actionMessageId)}>
+                <Text style={styles.actionText}>Edit Message</Text>
+              </Pressable>
+              <View style={styles.actionDivider} />
+              <Pressable style={styles.actionButton} onPress={() => handleDeleteMessage(actionMessageId)}>
+                <Text style={styles.actionText}>Delete Message</Text>
+              </Pressable>
+              <View style={styles.actionDivider} />
+              <Pressable style={styles.actionButton} onPress={() => setActionMessageId(null)}>
+                <Text style={styles.actionTextCancel}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -358,10 +387,10 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 12,
+    paddingBottom: 24,
   },
   messageRow: {
-    marginBottom: 12,
+    marginBottom: 14,
     flexDirection: 'row',
   },
   messageLeft: {
@@ -371,9 +400,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   messageBubble: {
-    maxWidth: '80%',
-    borderRadius: 0,
+    maxWidth: '85%',
     padding: 12,
+    borderRadius: 0, // Повний відказ від rounded
   },
   bubbleReceiver: {
     backgroundColor: '#FFFFFF',
@@ -382,19 +411,23 @@ const styles = StyleSheet.create({
   },
   bubbleSender: {
     backgroundColor: '#000000',
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   authorText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     marginBottom: 4,
     color: '#000000',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   authorTextSender: {
     color: '#FFFFFF',
   },
   messageText: {
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 20,
     color: '#000000',
   },
   messageTextSender: {
@@ -402,21 +435,25 @@ const styles = StyleSheet.create({
   },
   timestampText: {
     marginTop: 6,
-    fontSize: 12,
-    color: '#000000',
+    fontSize: 10,
+    color: '#666666',
     textAlign: 'right',
   },
   timestampTextSender: {
-    color: '#FFFFFF',
+    color: '#A3A3A3',
+  },
+  /* 🌟 СТИЛІ ЗОНИ ВВЕДЕННЯ ПОВІДОМЛЕННЯ */
+  inputAreaContainer: {
+    borderTopWidth: 2,
+    borderTopColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    paddingBottom: Platform.OS === 'ios' ? 4 : 12,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderTopWidth: 2,
-    borderTopColor: '#000000',
-    backgroundColor: '#FFFFFF',
   },
   input: {
     flex: 1,
@@ -424,21 +461,72 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     borderWidth: 2,
     borderColor: '#000000',
-    borderRadius: 0,
-    paddingHorizontal: 14,
+    borderRadius: 0, // Жорсткий квадрат
+    paddingHorizontal: 12,
     paddingVertical: 10,
     marginRight: 12,
     color: '#000000',
     backgroundColor: '#FFFFFF',
+    fontSize: 15,
   },
   sendButton: {
     height: 44,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     borderRadius: 0,
     backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#000000',
   },
+  sendButtonDisabled: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+  },
+  sendButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  sendButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  /* 🌟 СТИЛІ ДЛЯ ПЛАШКИ РЕДАГУВАННЯ (ПРОПУЩЕНІ РАНІШЕ) */
+  editInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 2,
+    borderTopColor: '#000000',
+  },
+  editInfoText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#000000',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cancelEditButton: {
+    padding: 4,
+    borderWidth: 2,
+    borderColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelEditButtonText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#000000',
+  },
+  /* 🌟 ПОВНІ СТИЛІ ДЛЯ КОРЕКТНОЇ МОДАЛКИ (ОБЕРЛЕЮ) */
   actionOverlay: {
     position: 'absolute',
     left: 0,
@@ -447,48 +535,63 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   actionBox: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#000000',
-    padding: 8,
-    width: 260,
+    borderRadius: 0,
+    width: 280,
   },
   actionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  actionDivider: {
+    height: 2,
+    backgroundColor: '#000000',
   },
   actionText: {
     color: '#000000',
     fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  sendButtonText: {
-    color: '#FFFFFF',
+  actionTextCancel: {
+    color: '#666666',
     fontWeight: '700',
+    fontSize: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#000000',
-    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666666',
+    textTransform: 'uppercase',
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '700',
     color: '#000000',
+    textTransform: 'uppercase',
   },
   sendError: {
     marginHorizontal: 16,
-    marginTop: 8,
-    fontSize: 14,
+    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: '600',
     color: '#000000',
   },
 });

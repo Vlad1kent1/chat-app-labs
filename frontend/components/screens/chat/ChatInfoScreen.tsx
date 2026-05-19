@@ -4,10 +4,12 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Pressable,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   View,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -155,118 +157,139 @@ export default function ChatInfoScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.headerBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>{'<'}</Text>
-        </Pressable>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
-        </View>
-      </View>
-
-      {loading ? (
-        <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color="#000000" />
-          <Text style={styles.loadingText}>Loading chat info...</Text>
-        </View>
-      ) : (
-        <View style={styles.bodyContainer}>
-          {recipient ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Recipient</Text>
-              <View style={styles.profileRow}>
-                <View style={styles.avatarBox}>
-                  <Text style={styles.avatarText}>{`${recipient.firstName?.charAt(0) ?? ''}${recipient.lastName?.charAt(0) ?? ''}`.toUpperCase()}</Text>
-                </View>
-                <View style={styles.profileMeta}>
-                  <Text style={styles.profileName}>{`${recipient.firstName ?? ''} ${recipient.lastName ?? recipient.username ?? ''}`.trim()}</Text>
-                  <Text style={styles.profileDetail}>{recipient.username}</Text>
-                </View>
-              </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Stack.Screen options={{ headerShown: false }} />
+          <View style={styles.headerBar}>
+            <Pressable style={styles.backButton} onPress={() => router.back()}>
+              <Text style={styles.backButtonText}>{'<'}</Text>
+            </Pressable>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
             </View>
-          ) : null}
+          </View>
 
-          {chat?.isGroup ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Group name</Text>
-              <TextInput
-                style={styles.input}
-                value={newTitle}
-                onChangeText={setNewTitle}
-                placeholder="New group name"
-                placeholderTextColor="#000000"
-              />
-              <Pressable style={styles.primaryButton} onPress={handleRename} disabled={renaming || !newTitle.trim()}>
-                <Text style={styles.primaryButtonText}>{renaming ? 'Renaming…' : 'Rename group'}</Text>
-              </Pressable>
+          {loading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color="#000000" />
+              <Text style={styles.loadingText}>Loading chat info...</Text>
             </View>
-          ) : null}
-
-          {chat?.isGroup ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Members</Text>
-              <FlatList
-                data={chat.members ?? []}
-                keyExtractor={(item) => `member-${item.id}`}
-                renderItem={({ item }) => (
-                  <View style={styles.memberRow}>
-                    <Text style={styles.memberText}>{`${item.firstName ?? ''} ${item.lastName ?? item.username ?? ''}`.trim()}</Text>
-                    <Text style={styles.memberDetail}>{item.username}</Text>
+          ) : (
+            <View style={styles.bodyContainer}>
+              {recipient ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionLabel}>Recipient</Text>
+                  <View style={styles.profileRow}>
+                    <View style={styles.avatarBox}>
+                      <Text style={styles.avatarText}>{`${recipient.firstName?.charAt(0) ?? ''}${recipient.lastName?.charAt(0) ?? ''}`.toUpperCase()}</Text>
+                    </View>
+                    <View style={styles.profileMeta}>
+                      <Text style={styles.profileName}>{`${recipient.firstName ?? ''} ${recipient.lastName ?? recipient.username ?? ''}`.trim()}</Text>
+                      <Text style={styles.profileDetail}>{recipient.username}</Text>
+                    </View>
                   </View>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-              />
-              <Pressable style={styles.primaryButton} onPress={() => setShowUserPicker(true)}>
-                <Text style={styles.primaryButtonText}>Add Participant</Text>
-              </Pressable>
-            </View>
-          ) : null}
+                </View>
+              ) : null}
 
-          {showUserPicker ? (
-            <View style={styles.card}>
-              <Text style={styles.sectionLabel}>Find users</Text>
-              <TextInput
-                style={styles.input}
-                value={searchTerm}
-                onChangeText={handleSearch}
-                placeholder="Search users"
-                placeholderTextColor="#000000"
-              />
-              <FlatList
-                data={searchResults}
-                keyExtractor={(item) => `search-user-${item.id}`}
-                renderItem={({ item }) => {
-                  const selected = selectedUsers.some((user) => user.id === item.id);
-                  return (
-                    <Pressable style={styles.userRow} onPress={() => toggleSelectedUser(item)}>
-                      <Text style={styles.userRowText}>{`${item.firstName ?? ''} ${item.lastName ?? item.username ?? ''}`.trim()}</Text>
-                      <Text style={styles.userRowText}>{selected ? '✓' : '+'}</Text>
+              {chat?.isGroup ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionLabel}>Group name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newTitle}
+                    onChangeText={setNewTitle}
+                    placeholder="New group name"
+                    placeholderTextColor="#000000"
+                  />
+                  <Pressable style={styles.primaryButton} onPress={handleRename} disabled={renaming || !newTitle.trim()}>
+                    <Text style={styles.primaryButtonText}>{renaming ? 'Renaming…' : 'Rename group'}</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {chat?.isGroup ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionLabel}>Members</Text>
+                  <FlatList
+                    data={chat.members ?? []}
+                    keyExtractor={(item) => `member-${item.id}`}
+                    renderItem={({ item }) => (
+                      <View style={styles.memberRow}>
+                        <Text style={styles.memberText}>{`${item.firstName ?? ''} ${item.lastName ?? item.username ?? ''}`.trim()}</Text>
+                        <Text style={styles.memberDetail}>{item.username}</Text>
+                      </View>
+                    )}
+                    ItemSeparatorComponent={() => <View style={styles.separator} />}
+                  />
+                  <Pressable style={styles.primaryButton} onPress={() => setShowUserPicker(true)}>
+                    <Text style={styles.primaryButtonText}>Add Participant</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {showUserPicker ? (
+                <View style={styles.card}>
+                  <Text style={styles.sectionLabel}>Find users</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={searchTerm}
+                    onChangeText={handleSearch}
+                    placeholder="Search users"
+                    placeholderTextColor="#000000"
+                  />
+                  <FlatList
+                    data={searchResults}
+                    keyExtractor={(item) => `search-user-${item.id}`}
+                    renderItem={({ item }) => {
+                      const selected = selectedUsers.some((user) => user.id === item.id);
+                      return (
+                        <Pressable style={styles.userRow} onPress={() => toggleSelectedUser(item)}>
+                          <Text style={styles.userRowText}>{`${item.firstName ?? ''} ${item.lastName ?? item.username ?? ''}`.trim()}</Text>
+                          <Text style={styles.userRowText}>{selected ? '✓' : '+'}</Text>
+                        </Pressable>
+                      );
+                    }}
+                    ListEmptyComponent={<Text style={styles.emptyText}>No users found.</Text>}
+                    style={styles.userList}
+                  />
+                  <View style={styles.actionRow}>
+                    <Pressable style={styles.secondaryButton} onPress={() => setShowUserPicker(false)}>
+                      <Text style={styles.secondaryButtonText}>Close</Text>
                     </Pressable>
-                  );
-                }}
-                ListEmptyComponent={<Text style={styles.emptyText}>No users found.</Text>}
-                style={styles.userList}
-              />
-              <View style={styles.actionRow}>
-                <Pressable style={styles.secondaryButton} onPress={() => setShowUserPicker(false)}>
-                  <Text style={styles.secondaryButtonText}>Close</Text>
-                </Pressable>
-                <Pressable style={styles.primaryButton} onPress={handleAddParticipants} disabled={adding || selectedUsers.length === 0}>
-                  <Text style={styles.primaryButtonText}>{adding ? 'Adding…' : 'Add'}</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
+                    <Pressable style={styles.primaryButton} onPress={handleAddParticipants} disabled={adding || selectedUsers.length === 0}>
+                      <Text style={styles.primaryButtonText}>{adding ? 'Adding…' : 'Add'}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        </View>
-      )}
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

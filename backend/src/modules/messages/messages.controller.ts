@@ -18,57 +18,12 @@ import { GetUser } from '../../common/decorators/get-user.decorator';
 import { type User } from '@prisma/client/edge';
 import { Patch, Delete } from '@nestjs/common';
 
-/**
- * MessagesController
- * 
- * RESTful API endpoints for message operations.
- * Handles HTTP requests for retrieving and creating messages.
- * 
- * Endpoints:
- * - GET /chats/:id/messages - Retrieve paginated messages for a chat
- * - POST /messages - Create a new message
- * 
- * All responses are automatically wrapped by TransformInterceptor in the format:
- * { success: true, data: [...] }
- */
+// MessagesController
 @Controller()
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
-  /**
-   * GET /chats/:id/messages
-   * 
-   * Retrieves all messages for a specific chat with pagination support.
-   * Returns messages ordered by most recent first.
-   * 
-   * Query Parameters:
-   * @param page - Page number (1-indexed), defaults to 1
-   * @param pageSize - Messages per page, defaults to 20
-   * 
-   * Path Parameters:
-   * @param id - The chat ID to fetch messages for
-   * 
-   * Returns: Array of MessageDto objects
-   * 
-   * Example Request:
-   * GET /chats/5/messages?page=1&pageSize=20
-   * 
-   * Example Response (wrapped by interceptor):
-   * {
-   *   "success": true,
-   *   "data": [
-   *     {
-   *       "id": 42,
-   *       "content": "Hello!",
-   *       "type": "TEXT",
-   *       "chatId": 5,
-   *       "authorId": 3,
-   *       "createdAt": "2026-05-13T10:30:00Z",
-   *       "isRead": false
-   *     }
-   *   ]
-   * }
-   */
+  // GET /chats/:id/messages
   @Get('chats/:id/messages')
   @UseGuards(JwtAuthGuard)
   async getMessagesByChat(
@@ -79,11 +34,7 @@ export class MessagesController {
     return this.messagesService.findAllByChat(chatId, page, pageSize);
   }
 
-  /**
-   * POST /messages
-   * 
-   * Creates a new message in the specified chat or creates a direct chat lazily.
-   */
+  // POST /messages
   @Post('messages')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)

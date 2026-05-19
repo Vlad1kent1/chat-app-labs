@@ -1,25 +1,13 @@
-/**
- * DTO for returning chat data to the client.
- * Used in API responses from chat endpoints.
- * Ensures type safety and consistent chat representation.
- */
+// DTO for returning chat data to the client.
 import { MessageDto } from '../../messages/dto/message.dto';
 
 export class ChatDto {
-  /** Unique chat identifier */
   id!: number;
 
-  /** Chat title (for group chats) */
   title?: string;
-
-  /** URL to chat image/avatar */
   chatImageUrl?: string;
 
-  /** Chat type: DIRECT or GROUP */
   type!: string;
-
-  /** Computed group flag */
-  isGroup!: boolean;
 
   /** Latest message preview */
   lastMessage?: MessageDto;

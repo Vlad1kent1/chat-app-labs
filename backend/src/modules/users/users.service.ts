@@ -3,22 +3,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
-/**
- * UsersService
- *
- * Handles user profile queries and updates.
- * All operations are asynchronous and use Prisma for database access.
- */
+// UsersService
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Retrieves a user by their unique ID.
-   * @param id - The user ID
-   * @returns Promise resolving to UserDto
-   * @throws NotFoundException if user doesn't exist
-   */
+  // Retrieves a user by their unique ID.
   async findById(id: number): Promise<UserDto> {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -31,11 +21,7 @@ export class UsersService {
     return this.mapToUserDto(user);
   }
 
-  /**
-   * Retrieves a user by their unique username.
-   * @param username - The username to search for
-   * @returns Promise resolving to UserDto or null
-   */
+  // Retrieves a user by their unique username.
   async findByUsername(username: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({
       where: { username },
@@ -44,11 +30,7 @@ export class UsersService {
     return user ? this.mapToUserDto(user) : null;
   }
 
-  /**
-   * Retrieves a user by email address.
-   * @param email - The email to search for
-   * @returns Promise resolving to UserDto or null
-   */
+  // Retrieves a user by email address.
   async findByEmail(email: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -57,11 +39,7 @@ export class UsersService {
     return user ? this.mapToUserDto(user) : null;
   }
 
-  /**
-   * Retrieves a user by phone number.
-   * @param phone - The phone number to search for
-   * @returns Promise resolving to UserDto or null
-   */
+  // Retrieves a user by phone number.
   async findByPhone(phone: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({
       where: { phone },
@@ -70,17 +48,7 @@ export class UsersService {
     return user ? this.mapToUserDto(user) : null;
   }
 
-  /**
-   * Updates a user's profile information (authenticated user only).
-   * Handles firstName, lastName, username, email, phone, and avatarUrl.
-   * Validates username uniqueness and email/phone uniqueness if changed.
-   *
-   * @param id - The user ID (from authenticated context)
-   * @param dto - UpdateUserDto with optional fields to update
-   * @returns Promise resolving to updated UserDto
-   * @throws NotFoundException if user doesn't exist
-   * @throws BadRequestException if validation fails (e.g., duplicate username)
-   */
+  // Updates a user's profile information (authenticated user only).
   async updateProfile(id: number, dto: UpdateUserDto): Promise<UserDto> {
     // Verify user exists before updating
     const existingUser = await this.findById(id);
@@ -127,14 +95,7 @@ export class UsersService {
     return this.mapToUserDto(user);
   }
 
-  /**
-   * Deletes a user account and all associated data.
-   * Cascades to remove all chat memberships and messages authored by the user.
-   *
-   * @param id - The user ID (from authenticated context)
-   * @returns Promise resolving to void
-   * @throws NotFoundException if user doesn't exist
-   */
+  // Deletes a user account and all associated data.
   async deleteAccount(id: number): Promise<void> {
     // Verify user exists before deleting
     await this.findById(id);
@@ -155,11 +116,7 @@ export class UsersService {
     });
   }
 
-  /**
-   * Updates user's online status and last seen timestamp.
-   * @param id - The user ID
-   * @returns Promise resolving to updated UserDto
-   */
+  // Updates user's online status and last seen timestamp.
   async updateStatus(id: number): Promise<UserDto> {
     // Verify user exists before updating
     await this.findById(id);
@@ -175,11 +132,7 @@ export class UsersService {
     return this.mapToUserDto(user);
   }
 
-  /**
-   * Sets user's offline status.
-   * @param id - The user ID
-   * @returns Promise resolving to updated UserDto
-   */
+  // Sets user's offline status.
   async setOffline(id: number): Promise<UserDto> {
     const user = await this.prisma.user.update({
       where: { id },
@@ -192,14 +145,7 @@ export class UsersService {
     return this.mapToUserDto(user);
   }
 
-  /**
-   * Maps Prisma User model to UserDto.
-   * Explicitly excludes password field from returned data.
-   *
-   * @param user - The Prisma user model
-   * @returns UserDto for API responses
-   * @private
-   */
+  // Maps Prisma User model to UserDto.
   private mapToUserDto(user: any): UserDto {
     // Explicitly exclude password field
     const { password, ...userWithoutPassword } = user;

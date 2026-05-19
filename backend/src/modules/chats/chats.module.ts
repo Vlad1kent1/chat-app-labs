@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common'; // 👈 1. Обов'язково додаємо forwardRef сюди
+import { Module, forwardRef } from '@nestjs/common';
 import { ChatsController } from './chats.controller';
 import { ChatsService } from './chats.service';
 import { PrismaModule } from '../../prisma/prisma.module';

@@ -47,8 +47,6 @@ export class MessagesService {
       const authorIdNumber = Number(authorId);
       const recipientIdNumber = Number(dto.recipientId);
 
-      // Зверни увагу: у твоїй новій міграції таблиця називається `participants` або `members`? 
-      // Залишаю як у тебе (members), але перевір відповідність новій схемі!
       const existingChat = await this.prisma.chat.findFirst({
         where: {
           type: 'DIRECT',
@@ -79,17 +77,15 @@ export class MessagesService {
       }
     }
 
-    // 🌟 ФІКС ПОМИЛКИ: Гарантуємо TypeScript, що chatId існує і є числом
     if (!chatId) {
       throw new BadRequestException('Chat could not be found or created.');
     }
 
-    // Тепер TypeScript знає, що тут chatId — це суворо number
     const message = await this.prisma.message.create({
       data: {
         content: dto.content,
         type: dto.type || 'TEXT',
-        chatId, // 🔥 Більше не свариться!
+        chatId,
         authorId,
       },
       include: {

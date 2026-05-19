@@ -1,10 +1,6 @@
 import { IsOptional, IsString, IsEmail, IsUrl } from 'class-validator';
 
-/**
- * DTO for updating user profile information.
- * Used in PATCH /users/profile endpoint.
- * Note: email is included but should be treated as read-only in the frontend for UX purposes.
- */
+// DTO for updating user profile information.
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
