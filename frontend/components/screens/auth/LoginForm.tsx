@@ -1,12 +1,7 @@
 import { useState } from 'react';
-import { 
-  Pressable, 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  Platform, 
-  ToastAndroid, 
+import {
+  Platform,
+  ToastAndroid,
   Alert,
   KeyboardAvoidingView,
   ScrollView,
@@ -14,10 +9,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
+import { Pressable } from '@/components/ui/pressable';
+import { Input, InputField } from '@/components/ui/input';
+
 import { loginUser } from '@store/slices/authSlice';
 import { useAppDispatch } from '@store/hooks';
-import { Button } from '@ui/button';
-import { FormControl } from '@ui/form-control';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -96,118 +94,89 @@ export default function LoginForm() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerClassName="flex-grow justify-center"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.container}>
-            <Text style={styles.heading}>Sign in</Text>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Email</FormControl.Label>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email"
-                placeholderTextColor="#6B7280"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={styles.input}
-              />
-            </FormControl>
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Password</FormControl.Label>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                placeholderTextColor="#6B7280"
-                secureTextEntry
-                style={styles.input}
-              />
-            </FormControl>
-            <Button style={styles.button} disabled={isSubmitting} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>{isSubmitting ? 'Signing in...' : 'Log in'}</Text>
-            </Button>
+          <Box className="p-6 justify-center">
 
-            <Pressable onPress={() => router.push('/forgot-password' as any)} style={styles.linkContainer}>
-              <Text style={styles.link}>Forgot password?</Text>
+            {/* ── Заголовок ── */}
+            <Text className="text-[32px] font-bold text-black mb-6">Sign in</Text>
+
+            {/* ── Помилка ── */}
+            {error ? (
+              <Text className="text-black font-semibold mb-4">{error}</Text>
+            ) : null}
+
+            {/* ── Email ── */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Email</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email"
+                  placeholderTextColor="#6B7280"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* ── Password ── */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Password</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor="#6B7280"
+                  secureTextEntry
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* ── Submit ── */}
+            <Pressable
+              className={`py-4 items-center rounded-none ${
+                isSubmitting ? 'bg-[#E5E7EB]' : 'bg-black'
+              }`}
+              disabled={isSubmitting}
+              onPress={handleSubmit}
+            >
+              <Text
+                className={`font-bold ${isSubmitting ? 'text-[#9CA3AF]' : 'text-white'}`}
+              >
+                {isSubmitting ? 'Signing in...' : 'Log in'}
+              </Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/register' as any)} style={styles.linkContainer}>
-              <Text style={styles.link}>Create an account</Text>
+
+            {/* ── Links ── */}
+            <Pressable
+              className="mt-4 items-center"
+              onPress={() => router.push('/forgot-password' as any)}
+            >
+              <Text className="text-black font-semibold">Forgot password?</Text>
             </Pressable>
-          </View>
+
+            <Pressable
+              className="mt-4 items-center"
+              onPress={() => router.push('/register' as any)}
+            >
+              <Text className="text-black font-semibold">Create an account</Text>
+            </Pressable>
+
+          </Box>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  container: {
-    padding: 24,
-    justifyContent: 'center',
-  },
-  heading: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 24,
-    color: '#000000',
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    color: '#000000',
-    borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  button: {
-    backgroundColor: '#000000',
-    borderRadius: 0,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  error: {
-    marginBottom: 16,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  link: {
-    color: '#000000',
-    fontWeight: '600',
-  },
-});

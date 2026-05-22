@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View, StyleSheet, Platform, ToastAndroid, Alert } from 'react-native';
+import { Platform, ToastAndroid, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Button } from '@ui/button';
-import { FormControl } from '@ui/form-control';
-import { Spinner } from '@ui/spinner';
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
+import { Pressable } from '@/components/ui/pressable';
+import { Input, InputField } from '@/components/ui/input';
+
 import { forgotPassword } from '@services/modules/auth.service';
 
 export default function ForgotPasswordScreen() {
@@ -33,7 +35,10 @@ export default function ForgotPasswordScreen() {
     try {
       await forgotPassword(email.trim());
       showToast('Verification code sent to your email.');
-      router.push({ pathname: '/otp-verification', params: { email: email.trim(), type: 'RESET' } } as any);
+      router.push({
+        pathname: '/otp-verification',
+        params: { email: email.trim(), type: 'RESET' },
+      } as any);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send recovery email.');
     } finally {
@@ -42,96 +47,55 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Forgot password</Text>
-      <Text style={styles.subtitle}>Enter the email linked to your account.</Text>
+    <Box className="flex-1 p-6 justify-center bg-white">
 
-      <FormControl style={styles.field} isInvalid={Boolean(error)}>
-        <FormControl.Label style={styles.label}>Email</FormControl.Label>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          placeholderTextColor="#6B7280"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={styles.input}
-        />
+      {/* Header */}
+      <Text className="text-[32px] font-bold text-black mb-3">Forgot password</Text>
+      <Text className="text-black leading-[22px] mb-6">
+        Enter the email linked to your account.
+      </Text>
+
+      {/* Email поле */}
+      <Box className="mb-4">
+        <Text className="text-black font-semibold mb-2">Email</Text>
+        <Input
+          className={`border rounded-none ${error ? 'border-[#B91C1C]' : 'border-black'}`}
+          size="md"
+        >
+          <InputField
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            placeholderTextColor="#6B7280"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            className="text-black px-3.5 py-3.5"
+          />
+        </Input>
         {error ? (
-          <FormControl.Error style={styles.errorBox}>
-            <FormControl.Error.Text style={styles.errorText}>{error}</FormControl.Error.Text>
-          </FormControl.Error>
+          <Text className="text-[#B91C1C] text-sm mt-2">{error}</Text>
         ) : null}
-      </FormControl>
+      </Box>
 
-      <Button style={styles.button} disabled={isSubmitting} onPress={handleSubmit}>
-        {isSubmitting ? <Spinner color="#FFFFFF" /> : <Text style={styles.buttonText}>Send code</Text>}
-      </Button>
-
-      <Pressable onPress={() => router.push('/login')} style={styles.linkContainer}>
-        <Text style={styles.link}>Back to login</Text>
+      {/* Submit */}
+      <Pressable
+        className={`py-4 items-center justify-center rounded-none ${
+          isSubmitting ? 'bg-[#E5E7EB]' : 'bg-black'
+        }`}
+        disabled={isSubmitting}
+        onPress={handleSubmit}
+      >
+        {isSubmitting
+          ? <ActivityIndicator color="#FFFFFF" />
+          : <Text className="text-white font-bold">Send code</Text>
+        }
       </Pressable>
-    </View>
+
+      {/* Link */}
+      <Pressable className="mt-5 items-center" onPress={() => router.push('/login')}>
+        <Text className="text-black font-semibold">Back to login</Text>
+      </Pressable>
+
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  heading: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#000000',
-  },
-  subtitle: {
-    color: '#000000',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    color: '#000000',
-    borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  button: {
-    backgroundColor: '#000000',
-    borderRadius: 0,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  linkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  link: {
-    color: '#000000',
-    fontWeight: '600',
-  },
-  errorBox: {
-    marginTop: 8,
-  },
-  errorText: {
-    color: '#B91C1C',
-  },
-});

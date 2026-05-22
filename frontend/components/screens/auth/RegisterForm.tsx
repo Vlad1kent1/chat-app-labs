@@ -1,10 +1,5 @@
 import { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  Pressable,
   Platform,
   ToastAndroid,
   Alert,
@@ -14,9 +9,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
+import { Pressable } from '@/components/ui/pressable';
+import { Input, InputField } from '@/components/ui/input';
+
 import { register } from '@services/modules/auth.service';
-import { Button } from '@ui/button';
-import { FormControl } from '@ui/form-control';
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -58,7 +56,10 @@ export default function RegisterForm() {
         lastName: lastName.trim() || undefined,
       });
       showToast('Verification code sent to your email.');
-      router.push({ pathname: '/otp-verification', params: { email: email.trim(), type: 'REGISTER' } } as any);
+      router.push({
+        pathname: '/otp-verification',
+        params: { email: email.trim(), type: 'REGISTER' },
+      } as any);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to register');
     } finally {
@@ -67,147 +68,126 @@ export default function RegisterForm() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerClassName="flex-grow justify-center"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.container}>
-            <Text style={styles.heading}>Create account</Text>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>First name</FormControl.Label>
-              <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="First name"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </FormControl>
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Last name</FormControl.Label>
-              <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Last name"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </FormControl>
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Email</FormControl.Label>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </FormControl>
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Password</FormControl.Label>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                secureTextEntry
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </FormControl>
-            <FormControl style={styles.field}>
-              <FormControl.Label style={styles.label}>Confirm password</FormControl.Label>
-              <TextInput
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm password"
-                secureTextEntry
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-              />
-            </FormControl>
+          <Box className="p-6 justify-center">
 
-            <Button style={styles.button} disabled={isSubmitting} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>{isSubmitting ? 'Sending code...' : 'Sign up'}</Text>
-            </Button>
+            <Text className="text-[32px] font-bold text-black mb-6">Create account</Text>
 
-            <Pressable onPress={() => router.push('/login')} style={styles.linkContainer}>
-              <Text style={styles.link}>Already have an account? Sign in</Text>
+            {/* Errors */}
+            {error ? (
+              <Text className="text-black font-semibold mb-4">{error}</Text>
+            ) : null}
+
+            {/* First name */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">First name</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="First name"
+                  placeholderTextColor="#6B7280"
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* Last name */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Last name</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Last name"
+                  placeholderTextColor="#6B7280"
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* Email */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Email</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email"
+                  placeholderTextColor="#6B7280"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* Password */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Password</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor="#6B7280"
+                  secureTextEntry
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* Confirm password */}
+            <Box className="mb-4">
+              <Text className="text-black font-semibold mb-2">Confirm password</Text>
+              <Input className="border border-black rounded-none" size="md">
+                <InputField
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm password"
+                  placeholderTextColor="#6B7280"
+                  secureTextEntry
+                  className="text-black px-3.5 py-3.5"
+                />
+              </Input>
+            </Box>
+
+            {/* Submit */}
+            <Pressable
+              className={`py-4 items-center rounded-none ${
+                isSubmitting ? 'bg-[#E5E7EB]' : 'bg-black'
+              }`}
+              disabled={isSubmitting}
+              onPress={handleSubmit}
+            >
+              <Text
+                className={`font-bold ${isSubmitting ? 'text-[#9CA3AF]' : 'text-white'}`}
+              >
+                {isSubmitting ? 'Sending code...' : 'Sign up'}
+              </Text>
             </Pressable>
-          </View>
+
+            {/* Links */}
+            <Pressable
+              className="mt-5 items-center"
+              onPress={() => router.push('/login')}
+            >
+              <Text className="text-black font-semibold">
+                Already have an account? Sign in
+              </Text>
+            </Pressable>
+
+          </Box>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  container: {
-    padding: 24,
-    justifyContent: 'center',
-  },
-  heading: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 24,
-    color: '#000000',
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#000000',
-    color: '#000000',
-    borderRadius: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  button: {
-    backgroundColor: '#000000',
-    borderRadius: 0,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  error: {
-    marginBottom: 16,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  link: {
-    color: '#000000',
-    fontWeight: '600',
-  },
-});
